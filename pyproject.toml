@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "gpx-etl"
+version = "0.1.0"
+description = "Parse, transform, process and create statistics from gpx files."
+authors = ["pakdelm <mehrshad.pakdel@posteo.de>"]
+license = "Apache License 2.0"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+pandas = "^1.4.3"
+pandas-stubs = "^1.4.3.220710"
+numpy = "^1.23.0"
+gpxpy = "^1.4.2"
+Mypy = "^0.960"
+pylint = "^2.14.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
