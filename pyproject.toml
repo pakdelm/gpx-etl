@@ -7,15 +7,15 @@ license = "Apache License 2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-pandas = "^1.4.3"
-pandas-stubs = "^1.4.3.220710"
-numpy = "^1.23.0"
-gpxpy = "^1.4.2"
-Mypy = "^0.960"
-pylint = "^2.14.4"
+pandas = "^1.5.2"
+pandas-stubs = "^1.5.2.230105"
+numpy = "^1.24.1"
+gpxpy = "^1.5.0"
+Mypy = "^0.991"
+pylint = "^2.15.10"
+pytest = "^7.2.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
