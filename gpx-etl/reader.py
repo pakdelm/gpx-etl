@@ -1,9 +1,12 @@
 """
 Functions to parse gpx files
 """
+import logging
 from typing import List, Dict
 import pandas as pd
 import gpxpy
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 METADATA_SCHEMA = [
 	"author_email",
@@ -32,7 +35,7 @@ def load_gpx(path: str) -> gpxpy.gpx.GPX:
 	return gpx
 
 
-class DataFrameConverter:
+class GPXDataFrameConverter:
 	def __init__(self, gpx: gpxpy.gpx.GPX):
 		self.gpx = gpx
 
@@ -65,16 +68,33 @@ class DataFrameConverter:
 
 		return df_metadata
 
+	@property
 	def get_track_points(self) -> pd.DataFrame:
-		self.gpx
+		tmp = []
+		for track in self.gpx.tracks:
+			logging.info(f"Track name: {track.name}")
 
-def read_gpx_data(path: str) -> List[gpxpy.gpx.GPX]:
-	"""
-    Parse gpx data from file path
-    :param path: Path to gpx file
-    :return: GPXTrackPoint class containing elements of gps coordinate information
-    """
-	with open(path, 'r', encoding="utf-8") as gpx_file:
-		gpx = gpxpy.parse(gpx_file)
+			for index, segment in enumerate(track.segments):
+				logging.info(f"Segment index: {index}")
+				logging.debug(f"Segment: {segment}")
 
-	return gpx
+				for point in segment.points:
+					logging.debug(f"Track point: {point}")
+
+					df_tmp = pd.DataFrame(
+						{
+							'track_name': track.name,
+							'segment_index': index,
+							'longitude': [point.longitude],
+							'latitude': [point.latitude],
+							'elevation': [point.elevation],
+							'time': [point.time.replace(tzinfo=None, microsecond=0)]  # type: ignore
+						}
+					)
+					tmp.append(df_tmp)
+
+		df_concat = pd.concat(tmp).reset_index(drop=True)
+
+		logging.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
+
+		return df_concat
