@@ -8,7 +8,7 @@ import gpxpy
 pd.set_option("display.max_columns", None)
 
 DATA_DIR = "../data"
-TEST_FILE_PATH = f"{DATA_DIR}/gpx_trk_trkseg.gpx"
+TEST_FILE_PATH = f"{DATA_DIR}/gpx.gpx"
 
 if __name__ == "__main__":
 	print(utils.COLS)

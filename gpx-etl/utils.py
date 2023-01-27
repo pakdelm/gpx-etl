@@ -1,3 +1,7 @@
+"""
+Utils contains data structures for DataFrame columns and gpx schema
+"""
+
 from dataclasses import dataclass
 
 
@@ -26,6 +30,7 @@ class Columns:
 	time_metadata: str
 	version: str
 	schema_locations: str
+	distance: str
 
 
 COLS = Columns(
@@ -51,7 +56,8 @@ COLS = Columns(
 	"name",
 	"time_metadata",
 	"version",
-	"schema_locations"
+	"schema_locations",
+	"distance"
 )
 
 METADATA_SCHEMA = [
