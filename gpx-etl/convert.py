@@ -1,45 +1,26 @@
 """
-Functions to parse gpx files
+GPXDataFrameConverter converts GPX xml to tabular data in pandas DataFrame format
 """
+
 import logging
-from typing import List, Dict
+from utils import COLS, METADATA_SCHEMA
+
 import pandas as pd
 import gpxpy
 
+from typing import List, Dict
+
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
-METADATA_SCHEMA = [
-	"author_email",
-	"author_link",
-	"author_link_text",
-	"author_link_type",
-	"bounds",
-	"copyright_author",
-	"copyright_license",
-	"copyright_year",
-	"creator",
-	"description",
-	"link",
-	"link_text",
-	"link_type",
-	"name",
-	"time",
-	"version",
-	'schema_locations'
-]
-
-def load_gpx(path: str) -> gpxpy.gpx.GPX:
-	with open(path, 'r', encoding="utf-8") as gpx_file:
-		gpx = gpxpy.parse(gpx_file)
-
-	return gpx
-
 
 class GPXDataFrameConverter:
 	def __init__(self, gpx: gpxpy.gpx.GPX):
+		"""
+
+		:type gpx: object
+		"""
 		self.gpx = gpx
 
-	@property
 	def get_metadata(self) -> pd.DataFrame:
 
 		metadata_values: List = [
@@ -68,7 +49,6 @@ class GPXDataFrameConverter:
 
 		return df_metadata
 
-	@property
 	def get_track_points(self) -> pd.DataFrame:
 		tmp = []
 		for track in self.gpx.tracks:
@@ -83,12 +63,12 @@ class GPXDataFrameConverter:
 
 					df_tmp = pd.DataFrame(
 						{
-							'track_name': track.name,
-							'segment_index': index,
-							'longitude': [point.longitude],
-							'latitude': [point.latitude],
-							'elevation': [point.elevation],
-							'time': [point.time.replace(tzinfo=None, microsecond=0)]  # type: ignore
+							COLS.track_name: [track.name],
+							COLS.segment_index: [index],
+							COLS.longitude: [point.longitude],
+							COLS.latitude: [point.latitude],
+							COLS.elevation: [point.elevation],
+							COLS.timestamp: [point.time.replace(tzinfo=None, microsecond=0)]  # type: ignore
 						}
 					)
 					tmp.append(df_tmp)
