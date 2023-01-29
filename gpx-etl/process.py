@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple
+from typing import List
 import pandas as pd
 
 from utils import COLS
@@ -41,9 +41,7 @@ class GPXDataFrameTransformer:
 			axis=1
 		)
 
-		# drop lead_long
-
-		return df_lead
+		return df_lead.drop(columns=[lead_long, lead_lat])
 
 	def label_speed(self):
 		pass
@@ -54,8 +52,8 @@ class GPXDataFrameTransformer:
 	def label_alt_gain_loss(self):
 		pass
 
-def _lead_by_partition(df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]) -> pd.DataFrame:
 
+def _lead_by_partition(df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]) -> pd.DataFrame:
 	lead_col: str = f"lead_{col}"
 
 	df[lead_col] = df.sort_values(by=order_by, ascending=True).groupby(partitions)[col].shift(-1)
