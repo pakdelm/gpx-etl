@@ -14,21 +14,15 @@ if __name__ == "__main__":
 	print(utils.COLS)
 
 	gpx = read.read_gpx_file(TEST_FILE_PATH)
-
 	gpx_converter = convert.GPXDataFrameConverter(gpx)
 
-	#df_metadata = gpx_converter.get_metadata()
-	#df_gpx = gpx_converter.get_track_points()
+	df = process.GPXDataFrameTransformer(gpx, enrich_metadata=True)\
+		.pipe(process.GPXDataFrameTransformer.label_distance)
 
-	# df_join = df_gpx.merge(df_metadata, how="cross")
-
-	gpx_transformer = process.GPXDataFrameTransformer(gpx)
-	df_enriched_metadata = gpx_transformer.enrich_metadata()
-	df_label_distances = gpx_transformer.label_distances(df_enriched_metadata)
 	# print(df_enriched_metadata.head())
 
-	print(df_label_distances.head(50))
-	print(df_label_distances.columns)
+	print(df.head(50))
+	print(df.columns)
 # data = reader.read_gpx_data(TEST_FILE_PATH)
 
 # with open(TEST_FILE_PATH, 'r', encoding="utf-8") as gpx_file:

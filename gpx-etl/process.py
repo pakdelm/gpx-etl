@@ -16,15 +16,16 @@ TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
 
 
 class GPXDataFrameTransformer:
-	def __init__(self, gpx: gpxpy.gpx.GPX):
-		self.gpx = gpx
-		self.converter = convert.GPXDataFrameConverter(self.gpx)
-
-	def enrich_metadata(self) -> pd.DataFrame:
-		return self.converter.get_track_points().merge(self.converter.get_metadata(), how="cross")
+	def __new__(cls, gpx: gpxpy.gpx.GPX, enrich_metadata: bool = True) -> pd.DataFrame:
+		converter = convert.GPXDataFrameConverter(gpx)
+		df_track_points = converter.get_track_points()
+		if enrich_metadata:
+			return df_track_points.merge(converter.get_metadata(), how="cross")
+		else:
+			return df_track_points
 
 	@classmethod
-	def label_distances(cls, df: pd.DataFrame) -> pd.DataFrame:
+	def label_distance(cls, df: pd.DataFrame) -> pd.DataFrame:
 		lead_long: str = f"lead_{COLS.longitude}"
 		lead_lat: str = f"lead_{COLS.latitude}"
 
@@ -43,13 +44,16 @@ class GPXDataFrameTransformer:
 
 		return df_lead.drop(columns=[lead_long, lead_lat])
 
-	def label_speed(self):
+	@classmethod
+	def label_speed(cls):
 		pass
 
-	def label_time_diff(self):
+	@classmethod
+	def label_time_diff(cls):
 		pass
 
-	def label_alt_gain_loss(self):
+	@classmethod
+	def label_alt_gain_loss(cls):
 		pass
 
 
