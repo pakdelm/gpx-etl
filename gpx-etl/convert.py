@@ -1,5 +1,6 @@
 """
-GPXDataFrameConverter converts GPX xml to tabular data in pandas DataFrame format
+GPXDataFrameConverter converts GPX xml to tabular data in pandas DataFrame
+format
 """
 
 import logging
@@ -10,15 +11,17 @@ import gpxpy
 
 from typing import List, Dict
 
+logging.basicConfig(
+	level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class GPXDataFrameConverter:
 	def __init__(self, gpx: gpxpy.gpx.GPX):
 		"""
 
-		:type gpx: object
-		"""
+        :type gpx: object
+        """
 		self.gpx = gpx
 
 	def get_metadata(self) -> pd.DataFrame:
@@ -40,10 +43,12 @@ class GPXDataFrameConverter:
 			self.gpx.name,
 			self.gpx.time,
 			self.gpx.version,
-			self.gpx.schema_locations
+			self.gpx.schema_locations,
 		]
 
-		metadata_map: Dict[str, List[str]] = dict(zip(METADATA_SCHEMA, [[v] for v in metadata_values]))
+		metadata_map: Dict[str, List[str]] = dict(
+			zip(METADATA_SCHEMA, [[v] for v in metadata_values])
+		)
 
 		df_metadata = pd.DataFrame(metadata_map)
 
@@ -68,7 +73,11 @@ class GPXDataFrameConverter:
 							COLS.longitude: [point.longitude],
 							COLS.latitude: [point.latitude],
 							COLS.elevation: [point.elevation],
-							COLS.timestamp: [point.time.replace(tzinfo=None, microsecond=0)]  # type: ignore
+							COLS.timestamp: [
+								point.time.replace(  # type: ignore
+									tzinfo=None, microsecond=0
+								)
+							],
 						}
 					)
 					tmp.append(df_tmp)
