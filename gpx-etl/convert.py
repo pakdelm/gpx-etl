@@ -1,6 +1,7 @@
-"""
-GPXDataFrameConverter converts GPX xml to tabular data in pandas DataFrame
-format
+"""GPXDataFrameConverter converts GPX xml to tabular data to pandas DataFrames.
+
+This class converts gpx data and returns metadata and track points as pandas
+DataFrames.
 """
 
 import logging
@@ -17,15 +18,14 @@ logging.basicConfig(
 
 
 class GPXDataFrameConverter:
-	def __init__(self, gpx: gpxpy.gpx.GPX):
-		"""
+	"""This class converts gpx data and returns metadata and track points."""
 
-        :type gpx: object
-        """
+	def __init__(self, gpx: gpxpy.gpx.GPX):
+		"""Instantiate class with gpx data."""
 		self.gpx = gpx
 
 	def get_metadata(self) -> pd.DataFrame:
-
+		"""Return pandas DataFrame with metadata from gpx data."""
 		metadata_values: List = [
 			self.gpx.author_email,
 			self.gpx.author_link,
@@ -55,6 +55,12 @@ class GPXDataFrameConverter:
 		return df_metadata
 
 	def get_track_points(self) -> pd.DataFrame:
+		"""Return time series pandas DataFrame converted from gpx data.
+
+		Rows will be labeled by track_name and segment_index that originates
+		from gpx xml structure. Data schema as columns: track_name,
+		segment_index, longitude, latitude, elevation, timestamp.
+		"""
 		tmp = []
 		for track in self.gpx.tracks:
 			logging.info(f"Track name: {track.name}")
