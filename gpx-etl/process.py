@@ -1,3 +1,9 @@
+"""GPXDataFrameTransformer transforms and labels statistics to gpx data.
+
+This module consists of GPXDataFrameTransformer and private functions for
+DataFrame transformations.
+"""
+
 import logging
 from typing import List
 import pandas as pd
@@ -17,11 +23,21 @@ TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
 
 
 class GPXDataFrameTransformer:
+    """GPXDataFrameTransformer transforms and labels statistics to gpx data."""
+
     def __init__(self, gpx: gpxpy.gpx.GPX):
+        """Instantiate class with gpx data and create converter instance."""
         self.gpx = gpx
         self.converter = convert.GPXDataFrameConverter(gpx)
 
     def create_data_frame(self, enrich_metadata: bool = True) -> pd.DataFrame:
+        """Convert gpx data to DataFrame using the GPXDataFrameConverter.
+
+        :param enrich_metadata: If true, enrich time series DataFrame with
+        metadata columns from the gpx xml. If false, return time series
+        DataFrame only.
+        :return: Return converted DataFrame with time series gpx data.
+        """
         df_track_points = self.converter.get_track_points()
         if enrich_metadata:
             return df_track_points.merge(
@@ -79,7 +95,10 @@ def _lead_by_partition(
     col: str, order_by: List[str],
         partitions: List[str]
 ) -> pd.DataFrame:
+    """Return DataFrame with shifted values by 1 by partitions and order.
 
+    Create extra column "lead_" + input col name.
+    """
     lead_col: str = f"lead_{col}"
 
     df[lead_col] = df\

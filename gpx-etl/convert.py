@@ -1,6 +1,6 @@
 """GPXDataFrameConverter converts GPX xml to tabular data to pandas DataFrames.
 
-This class converts gpx data and returns metadata and track points as pandas
+This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
 
