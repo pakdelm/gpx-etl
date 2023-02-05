@@ -55,5 +55,5 @@ jobs:
     - name: Test with pytest
       run: |
         source .venv/bin/activate
-        pytest tests/
+        poetry run pytest tests/
         coverage report
