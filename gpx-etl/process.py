@@ -40,10 +40,7 @@ class GPXDataFrameTransformer:
         """
         df_track_points = self.converter.get_track_points()
         if enrich_metadata:
-            return df_track_points.merge(
-                self.converter.get_metadata(),
-                how="cross"
-            )
+            return df_track_points.merge(self.converter.get_metadata(), how="cross")
         else:
             return df_track_points
 
@@ -52,17 +49,9 @@ class GPXDataFrameTransformer:
         lead_long: str = f"lead_{COLS.longitude}"
         lead_lat: str = f"lead_{COLS.latitude}"
 
+        df_lead = _lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
         df_lead = _lead_by_partition(
-            df,
-            COLS.longitude,
-            ORDER_BY_COL,
-            TRACK_PARTITIONS
-        )
-        df_lead = _lead_by_partition(
-            df_lead,
-            COLS.latitude,
-            ORDER_BY_COL,
-            TRACK_PARTITIONS
+            df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS
         )
 
         df_lead[COLS.distance] = df_lead.apply(
@@ -91,9 +80,7 @@ class GPXDataFrameTransformer:
 
 
 def _lead_by_partition(
-    df: pd.DataFrame,
-    col: str, order_by: List[str],
-        partitions: List[str]
+    df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]
 ) -> pd.DataFrame:
     """Return DataFrame with shifted values by 1 by partitions and order.
 
@@ -101,10 +88,8 @@ def _lead_by_partition(
     """
     lead_col: str = f"lead_{col}"
 
-    df[lead_col] = df\
-        .sort_values(by=order_by, ascending=True)\
-        .groupby(partitions)\
-        [col]\
-        .shift(-1)
+    df[lead_col] = (
+        df.sort_values(by=order_by, ascending=True).groupby(partitions)[col].shift(-1)
+    )
 
     return df
