@@ -16,8 +16,9 @@ if __name__ == "__main__":
     gpx_converter = convert.GPXDataFrameConverter(gpx)
 
     transformer = process.GPXDataFrameTransformer(gpx)
-    df = transformer.create_data_frame(enrich_metadata=True)\
-        .pipe(process.GPXDataFrameTransformer.label_distance)
+    df = transformer.create_data_frame(enrich_metadata=True).pipe(
+        process.GPXDataFrameTransformer.label_distance
+    )
 
     # print(df_enriched_metadata.head())
 
