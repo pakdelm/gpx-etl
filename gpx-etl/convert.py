@@ -5,25 +5,44 @@ DataFrames.
 """
 from typing import List, Dict
 import logging
-from utils import COLS, LOG_FORMAT, METADATA_SCHEMA
+from utils import COLS, METADATA_SCHEMA
 
 import pandas as pd
 import gpxpy
 
 logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.DEBUG)
-# logger.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+
+ORDER_BY_COL = [COLS.timestamp]
+TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
 
 
-
-class GPXDataFrameConverter:
+class GPXTransformer:
     """This class converts gpx data and returns metadata and track points."""
 
     def __init__(self, gpx: gpxpy.gpx.GPX):
         """Instantiate class with gpx data."""
         self.gpx = gpx
 
-    def get_metadata(self) -> pd.DataFrame:
+    def convert(self, with_metadata: bool = True) -> pd.DataFrame:
+        """Convert gpx data to DataFrame format.
+
+        :param with_metadata: If true, enrich time series DataFrame with
+        metadata columns from the gpx xml. If false, return time series
+        DataFrame only.
+        :return: Return converted DataFrame with time series gpx data.
+        """
+        df_track_points = self._get_track_points()
+        if with_metadata:
+            return df_track_points.merge(self._get_metadata(), how="cross")
+        else:
+            return df_track_points
+
+    def transform(self, with_metadata: bool = True) -> pd.DataFrame:
+        """Transform all"""
+        df = self.convert(with_metadata=with_metadata).pipe(self._label_distance)
+        return df
+
+    def _get_metadata(self) -> pd.DataFrame:
         """Return pandas DataFrame with metadata from gpx data."""
         metadata_values: List = [
             self.gpx.author_email,
@@ -53,7 +72,7 @@ class GPXDataFrameConverter:
 
         return df_metadata
 
-    def get_track_points(self) -> pd.DataFrame:
+    def _get_track_points(self) -> pd.DataFrame:
         """Return time series pandas DataFrame converted from gpx data.
 
         Rows will be labeled by track_name and segment_index that originates
@@ -79,9 +98,7 @@ class GPXDataFrameConverter:
                             COLS.latitude: [point.latitude],
                             COLS.elevation: [point.elevation],
                             COLS.timestamp: [
-                                point.time.replace(  # type: ignore
-                                    tzinfo=None, microsecond=0
-                                )
+                                point.time.replace(tzinfo=None, microsecond=0)  # type: ignore
                             ],
                         }
                     )
@@ -92,3 +109,47 @@ class GPXDataFrameConverter:
         logger.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
 
         return df_concat
+
+    def _label_distance(self, df: pd.DataFrame) -> pd.DataFrame:
+        lead_long: str = f"lead_{COLS.longitude}"
+        lead_lat: str = f"lead_{COLS.latitude}"
+
+        df_lead = self._lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self._lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
+
+        df_lead[COLS.distance] = df_lead.apply(
+            lambda x: gpxpy.geo.haversine_distance(
+                latitude_1=x[COLS.latitude],
+                longitude_1=x[COLS.longitude],
+                latitude_2=x[lead_lat],
+                longitude_2=x[lead_long],
+            ),
+            axis=1,
+        )
+
+        return df_lead.drop(columns=[lead_long, lead_lat])
+
+    def _label_time_diff(self):
+        pass
+
+    def _label_speed(self):
+        pass
+
+    def _label_alt_gain_loss(self):
+        pass
+
+    @staticmethod
+    def _lead_by_partition(
+            df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]
+    ) -> pd.DataFrame:
+        """Return DataFrame with shifted values by 1 by partitions and order.
+
+        Create extra column "lead_" + input col name.
+        """
+        lead_col: str = f"lead_{col}"
+
+        df[lead_col] = (
+            df.sort_values(by=order_by, ascending=True).groupby(partitions)[col].shift(-1)
+        )
+
+        return df

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
+
 @dataclass
 class Columns:
     track_name: str
