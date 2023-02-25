@@ -3,28 +3,55 @@
 This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
-
+from typing import List, Dict
 import logging
+
+import numpy as np
+
 from utils import COLS, METADATA_SCHEMA
 
 import pandas as pd
 import gpxpy
 
-from typing import List, Dict
+logger = logging.getLogger(__name__)
 
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+ORDER_BY_COL = [COLS.timestamp]
+TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
 
 
-class GPXDataFrameConverter:
+class GPXTransformer:
     """This class converts gpx data and returns metadata and track points."""
 
     def __init__(self, gpx: gpxpy.gpx.GPX):
         """Instantiate class with gpx data."""
         self.gpx = gpx
 
-    def get_metadata(self) -> pd.DataFrame:
+    def convert(self, with_metadata: bool = True) -> pd.DataFrame:
+        """Convert gpx data to DataFrame format.
+
+        :param with_metadata: If true, enrich time series DataFrame with
+        metadata columns from the gpx xml. If false, return time series
+        DataFrame only.
+        :return: Return converted DataFrame with time series gpx data.
+        """
+        df_track_points = self._get_track_points()
+        if with_metadata:
+            return df_track_points.merge(self._get_metadata(), how="cross")
+        else:
+            return df_track_points
+
+    def transform(self, with_metadata: bool = True) -> pd.DataFrame:
+        """Transform all"""
+        df = (
+            self.convert(with_metadata=with_metadata)
+            .pipe(self._label_distance)
+            .pipe(self._label_time_diff)
+            .pipe(self._label_speed)
+            .pipe(self._label_alt_gain_loss)
+        )
+        return df
+
+    def _get_metadata(self) -> pd.DataFrame:
         """Return pandas DataFrame with metadata from gpx data."""
         metadata_values: List = [
             self.gpx.author_email,
@@ -54,7 +81,7 @@ class GPXDataFrameConverter:
 
         return df_metadata
 
-    def get_track_points(self) -> pd.DataFrame:
+    def _get_track_points(self) -> pd.DataFrame:
         """Return time series pandas DataFrame converted from gpx data.
 
         Rows will be labeled by track_name and segment_index that originates
@@ -63,14 +90,14 @@ class GPXDataFrameConverter:
         """
         tmp = []
         for track in self.gpx.tracks:
-            logging.info(f"Track name: {track.name}")
+            logger.info(f"Track name: {track.name}")
 
             for index, segment in enumerate(track.segments):
-                logging.info(f"Segment index: {index}")
-                logging.debug(f"Segment: {segment}")
+                logger.info(f"Segment index: {index}")
+                logger.debug(f"Segment: {segment}")
 
                 for point in segment.points:
-                    logging.debug(f"Track point: {point}")
+                    logger.debug(f"Track point: {point}")
 
                     df_tmp = pd.DataFrame(
                         {
@@ -80,9 +107,7 @@ class GPXDataFrameConverter:
                             COLS.latitude: [point.latitude],
                             COLS.elevation: [point.elevation],
                             COLS.timestamp: [
-                                point.time.replace(  # type: ignore
-                                    tzinfo=None, microsecond=0
-                                )
+                                point.time.replace(tzinfo=None, microsecond=0)  # type: ignore
                             ],
                         }
                     )
@@ -90,6 +115,89 @@ class GPXDataFrameConverter:
 
         df_concat = pd.concat(tmp).reset_index(drop=True)
 
-        logging.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
+        logger.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
 
         return df_concat
+
+    def _label_distance(self, df: pd.DataFrame) -> pd.DataFrame:
+        lead_long: str = f"lead_{COLS.longitude}"
+        lead_lat: str = f"lead_{COLS.latitude}"
+
+        df_lead = self.__lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self.__lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
+
+        df_lead[COLS.distance] = df_lead.apply(
+            lambda x: gpxpy.geo.haversine_distance(
+                latitude_1=x[COLS.latitude],
+                longitude_1=x[COLS.longitude],
+                latitude_2=x[lead_lat],
+                longitude_2=x[lead_long],
+            ),
+            axis=1,
+        )
+
+        return df_lead.drop(columns=[lead_long, lead_lat])
+
+    def _label_time_diff(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Label time delta between timestamps."""
+        lead_ts: str = f"lead_{COLS.timestamp}"
+
+        df_lead = self.__lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
+
+        df_lead[COLS.delta_t] = df_lead[lead_ts] - df_lead[COLS.timestamp]
+        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)
+
+        return df_lead
+
+    def _label_alt_gain_loss(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Label elevation difference and alt gain and loss.
+
+        TODO: Test logic
+        Calculate altitude gain and loss. Sum to get total gain and loss in meters. Note: alt_dif
+        col might be misleading as negative differences for n-1 indicate alt gain and vice verca.
+        """
+        lead_elevation: str = f"lead_{COLS.elevation}"
+
+        df_lead = self.__lead_by_partition(df, COLS.elevation, ORDER_BY_COL, TRACK_PARTITIONS)
+
+        df_lead[COLS.delta_elevation] = df_lead[lead_elevation] - df_lead[COLS.elevation]
+
+        df_lead[COLS.altitude_gain] = np.where(
+            df_lead[COLS.delta_elevation] < 0, abs(df_lead[COLS.delta_elevation]), 0
+        )
+        df_lead[COLS.altitude_loss] = np.where(
+            df_lead[COLS.delta_elevation] > 0, df_lead[COLS.delta_elevation], 0
+        )
+
+        return df_lead
+
+    @staticmethod
+    def _label_speed(df: pd.DataFrame) -> pd.DataFrame:
+        """Label speed in km/h."""
+        df[COLS.speed] = (df[COLS.distance] / df[COLS.delta_t]) * 3.6
+
+        return df
+
+    def _label_total_distance(self):
+        """TODO: How to partition over segments"""
+        pass
+
+    def _label_average_speed(self):
+        """TODO: How to partition over segments"""
+        pass
+
+    @staticmethod
+    def __lead_by_partition(
+        df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]
+    ) -> pd.DataFrame:
+        """Return DataFrame with shifted values by 1 by partitions and order.
+
+        Create extra column "lead_" + input col name.
+        """
+        lead_col: str = f"lead_{col}"
+
+        df[lead_col] = (
+            df.sort_values(by=order_by, ascending=True).groupby(partitions)[col].shift(-1)
+        )
+
+        return df

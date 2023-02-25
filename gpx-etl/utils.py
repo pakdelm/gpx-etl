@@ -4,6 +4,8 @@ Utils contains data structures for DataFrame columns and gpx schema
 
 from dataclasses import dataclass
 
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+
 
 @dataclass
 class Columns:
@@ -31,6 +33,11 @@ class Columns:
     version: str
     schema_locations: str
     distance: str
+    delta_t: str
+    speed: str
+    delta_elevation: str
+    altitude_gain: str
+    altitude_loss: str
 
 
 COLS = Columns(
@@ -58,6 +65,11 @@ COLS = Columns(
     "version",
     "schema_locations",
     "distance",
+    "delta_t",
+    "speed",
+    "delta_elevation",
+    "altitude_gain",
+    "altitude_loss",
 )
 
 METADATA_SCHEMA = [
