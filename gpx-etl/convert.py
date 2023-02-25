@@ -5,6 +5,9 @@ DataFrames.
 """
 from typing import List, Dict
 import logging
+
+import numpy as np
+
 from utils import COLS, METADATA_SCHEMA
 
 import pandas as pd
@@ -39,7 +42,13 @@ class GPXTransformer:
 
     def transform(self, with_metadata: bool = True) -> pd.DataFrame:
         """Transform all"""
-        df = self.convert(with_metadata=with_metadata).pipe(self._label_distance)
+        df = (
+            self.convert(with_metadata=with_metadata)
+            .pipe(self._label_distance)
+            .pipe(self._label_time_diff)
+            .pipe(self._label_speed)
+            .pipe(self._label_alt_gain_loss)
+        )
         return df
 
     def _get_metadata(self) -> pd.DataFrame:
@@ -114,8 +123,8 @@ class GPXTransformer:
         lead_long: str = f"lead_{COLS.longitude}"
         lead_lat: str = f"lead_{COLS.latitude}"
 
-        df_lead = self._lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
-        df_lead = self._lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self.__lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self.__lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.distance] = df_lead.apply(
             lambda x: gpxpy.geo.haversine_distance(
@@ -129,18 +138,57 @@ class GPXTransformer:
 
         return df_lead.drop(columns=[lead_long, lead_lat])
 
-    def _label_time_diff(self):
+    def _label_time_diff(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Label time delta between timestamps."""
+        lead_ts: str = f"lead_{COLS.timestamp}"
+
+        df_lead = self.__lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
+
+        df_lead[COLS.delta_t] = df_lead[lead_ts] - df_lead[COLS.timestamp]
+        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)
+
+        return df_lead
+
+    def _label_alt_gain_loss(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Label elevation difference and alt gain and loss.
+
+        TODO: Test logic
+        Calculate altitude gain and loss. Sum to get total gain and loss in meters. Note: alt_dif
+        col might be misleading as negative differences for n-1 indicate alt gain and vice verca.
+        """
+        lead_elevation: str = f"lead_{COLS.elevation}"
+
+        df_lead = self.__lead_by_partition(df, COLS.elevation, ORDER_BY_COL, TRACK_PARTITIONS)
+
+        df_lead[COLS.delta_elevation] = df_lead[lead_elevation] - df_lead[COLS.elevation]
+
+        df_lead[COLS.altitude_gain] = np.where(
+            df_lead[COLS.delta_elevation] < 0, abs(df_lead[COLS.delta_elevation]), 0
+        )
+        df_lead[COLS.altitude_loss] = np.where(
+            df_lead[COLS.delta_elevation] > 0, df_lead[COLS.delta_elevation], 0
+        )
+
+        return df_lead
+
+    @staticmethod
+    def _label_speed(df: pd.DataFrame) -> pd.DataFrame:
+        """Label speed in km/h."""
+        df[COLS.speed] = (df[COLS.distance] / df[COLS.delta_t]) * 3.6
+
+        return df
+
+    def _label_total_distance(self):
+        """TODO: How to partition over segments"""
         pass
 
-    def _label_speed(self):
-        pass
-
-    def _label_alt_gain_loss(self):
+    def _label_average_speed(self):
+        """TODO: How to partition over segments"""
         pass
 
     @staticmethod
-    def _lead_by_partition(
-            df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]
+    def __lead_by_partition(
+        df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]
     ) -> pd.DataFrame:
         """Return DataFrame with shifted values by 1 by partitions and order.
 
