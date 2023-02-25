@@ -3,18 +3,17 @@
 This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
-
+from typing import List, Dict
 import logging
-from utils import COLS, METADATA_SCHEMA
+from utils import COLS, LOG_FORMAT, METADATA_SCHEMA
 
 import pandas as pd
 import gpxpy
 
-from typing import List, Dict
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.DEBUG)
+# logger.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
 
 
 class GPXDataFrameConverter:
@@ -63,14 +62,14 @@ class GPXDataFrameConverter:
         """
         tmp = []
         for track in self.gpx.tracks:
-            logging.info(f"Track name: {track.name}")
+            logger.info(f"Track name: {track.name}")
 
             for index, segment in enumerate(track.segments):
-                logging.info(f"Segment index: {index}")
-                logging.debug(f"Segment: {segment}")
+                logger.info(f"Segment index: {index}")
+                logger.debug(f"Segment: {segment}")
 
                 for point in segment.points:
-                    logging.debug(f"Track point: {point}")
+                    logger.debug(f"Track point: {point}")
 
                     df_tmp = pd.DataFrame(
                         {
@@ -90,6 +89,6 @@ class GPXDataFrameConverter:
 
         df_concat = pd.concat(tmp).reset_index(drop=True)
 
-        logging.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
+        logger.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
 
         return df_concat

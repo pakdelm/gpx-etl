@@ -4,6 +4,7 @@ Utils contains data structures for DataFrame columns and gpx schema
 
 from dataclasses import dataclass
 
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 @dataclass
 class Columns:

@@ -4,19 +4,14 @@ This module consists of GPXDataFrameTransformer and private functions for
 DataFrame transformations.
 """
 
-import logging
 from typing import List
-import pandas as pd
-
-from utils import COLS
-
-import gpxpy
 
 import convert
+from utils import COLS
 
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+import pandas as pd
+import gpxpy
+
 
 ORDER_BY_COL = [COLS.timestamp]
 TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
