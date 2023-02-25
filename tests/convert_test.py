@@ -6,7 +6,7 @@ from read import read_gpx_file
 
 logger = logging.getLogger(__name__)
 
-TEST_FILES_DIR = "test_files"
+TEST_FILES_DIR = "tests/test_files"
 
 
 def test_label_distances():
