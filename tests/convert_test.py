@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 import pandas as pd
 import pytest
@@ -11,7 +10,6 @@ from utils import COLS
 from convert import GPXTransformer
 from read import read_gpx_file
 
-from datetime import datetime, timedelta
 
 pd.set_option("display.max_columns", None)
 
@@ -39,7 +37,7 @@ def create_gpx_data_from_file() -> pd.DataFrame:
     [
         [
             GPXTrackPoint(latitude=40.73, longitude=-73.93),
-            GPXTrackPoint(latitude=34.05, longitude=-118.24)
+            GPXTrackPoint(latitude=34.05, longitude=-118.24),
         ]
     ],
     indirect=True,
@@ -47,7 +45,7 @@ def create_gpx_data_from_file() -> pd.DataFrame:
 def test_label_long_distances(create_gpx_data_from_class):
     df_gpx = create_gpx_data_from_class
     distance = df_gpx[COLS.distance].sum()
-    assert distance == pytest.approx(3935.74 * 1000, rel=0.003) # 3 % error in long distances
+    assert distance == pytest.approx(3935.74 * 1000, rel=0.003)  # 3 % error in long distances
 
 
 @pytest.mark.parametrize(
@@ -65,7 +63,7 @@ def test_label_long_distances(create_gpx_data_from_class):
 def test_label_short_distances(create_gpx_data_from_class):
     df_gpx = create_gpx_data_from_class
     distance = df_gpx[COLS.distance].sum()
-    assert distance == pytest.approx(22.3, rel=0.003) # 3 % error in long distances
+    assert distance == pytest.approx(22.3, rel=0.003)  # 3 % error in long distances
 
 
 def test_label_distances_from_file(create_gpx_data_from_file):
