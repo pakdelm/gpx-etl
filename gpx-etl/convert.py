@@ -163,10 +163,10 @@ class GPXTransformer:
         df_lead[COLS.delta_elevation] = df_lead[lead_elevation] - df_lead[COLS.elevation]
 
         df_lead[COLS.altitude_gain] = np.where(
-            df_lead[COLS.delta_elevation] < 0, abs(df_lead[COLS.delta_elevation]), 0
+            df_lead[COLS.delta_elevation] > 0, df_lead[COLS.delta_elevation], 0
         )
         df_lead[COLS.altitude_loss] = np.where(
-            df_lead[COLS.delta_elevation] > 0, df_lead[COLS.delta_elevation], 0
+            df_lead[COLS.delta_elevation] < 0, df_lead[COLS.delta_elevation], 0
         )
 
         return df_lead
