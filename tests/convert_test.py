@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from gpxpy.gpx import GPXTrackPoint
 
-import test_utils
+from .test_utils import generate_gpx_data
 from utils import COLS
 
 from convert import GPXTransformer
@@ -15,12 +15,12 @@ pd.set_option("display.max_columns", None)
 
 logger = logging.getLogger(__name__)
 
-TEST_FILES_DIR = "test_files"
+TEST_FILES_DIR = "tests/test_files"
 
 
 @pytest.fixture(scope="function")
 def create_gpx_data_from_class(request):
-    gpx = test_utils.generate_gpx_data(request.param)
+    gpx = generate_gpx_data(request.param)
     df_gpx = GPXTransformer(gpx).transform()
     return df_gpx
 
