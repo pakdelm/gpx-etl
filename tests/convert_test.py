@@ -12,10 +12,9 @@ from read import read_gpx_file
 
 
 pd.set_option("display.max_columns", None)
-
 logger = logging.getLogger(__name__)
 
-TEST_FILES_DIR = "tests/test_files"
+TEST_FILES_DIR = "test_files"
 
 
 @pytest.fixture(scope="function")
@@ -26,8 +25,9 @@ def create_gpx_data_from_class(request):
 
 
 @pytest.fixture(scope="function")
-def create_gpx_data_from_file() -> pd.DataFrame:
-    gpx = read_gpx_file(f"{TEST_FILES_DIR}/gpx_distances.gpx")
+def create_gpx_data_from_file(request) -> pd.DataFrame:
+    gpx_file_name = request.param
+    gpx = read_gpx_file(f"{TEST_FILES_DIR}/{gpx_file_name}")
     df_gpx = GPXTransformer(gpx).transform()
     return df_gpx
 
@@ -45,7 +45,7 @@ def create_gpx_data_from_file() -> pd.DataFrame:
 def test_label_long_distances(create_gpx_data_from_class):
     df_gpx = create_gpx_data_from_class
     distance = df_gpx[COLS.distance].sum()
-    assert distance == pytest.approx(3935.74 * 1000, rel=0.003)  # 3 % error in long distances
+    assert distance == pytest.approx(3935.74 * 1000, rel=0.003)
 
 
 @pytest.mark.parametrize(
@@ -63,15 +63,13 @@ def test_label_long_distances(create_gpx_data_from_class):
 def test_label_short_distances(create_gpx_data_from_class):
     df_gpx = create_gpx_data_from_class
     distance = df_gpx[COLS.distance].sum()
-    assert distance == pytest.approx(22.3, rel=0.003)  # 3 % error in long distances
+    assert distance == pytest.approx(22.3, rel=0.003)
 
 
+@pytest.mark.parametrize("create_gpx_data_from_file", ["gpx_distances.gpx"], indirect=True)
 def test_label_distances_from_file(create_gpx_data_from_file):
     df_gpx = create_gpx_data_from_file
     actual_distance = df_gpx[COLS.distance].sum()
-
-    logger.debug(actual_distance)
-
     assert actual_distance == pytest.approx(22600, abs=10)
 
 
