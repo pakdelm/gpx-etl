@@ -3,15 +3,13 @@
 This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
-from typing import List, Dict
 import logging
+from typing import Dict, List
 
-import numpy as np
-
-from utils import COLS, METADATA_SCHEMA
-
-import pandas as pd
 import gpxpy
+import numpy as np
+import pandas as pd
+from utils import COLS, METADATA_SCHEMA
 
 logger = logging.getLogger(__name__)
 

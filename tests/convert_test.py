@@ -2,14 +2,12 @@ import logging
 
 import pandas as pd
 import pytest
+from convert import GPXTransformer
 from gpxpy.gpx import GPXTrackPoint
-
-from .test_utils import generate_gpx_data
+from read import read_gpx_file
 from utils import COLS
 
-from convert import GPXTransformer
-from read import read_gpx_file
-
+from .test_utils import generate_gpx_data
 
 pd.set_option("display.max_columns", None)
 logger = logging.getLogger(__name__)
