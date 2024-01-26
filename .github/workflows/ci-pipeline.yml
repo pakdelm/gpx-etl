@@ -57,5 +57,5 @@ jobs:
     # run test suite
     - name: Test with pytest
       run: |
-        source .venv/bin/activate
+    # source .venv/bin/activate
         poetry run pytest --import-mode=append tests/
