@@ -143,7 +143,7 @@ class GPXTransformer:
         df_lead = self.__lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.delta_t] = df_lead[lead_ts] - df_lead[COLS.timestamp]
-        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)
+        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1) # type: ignore
 
         return df_lead
 
