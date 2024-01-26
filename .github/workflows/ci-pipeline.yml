@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9"] # ["3.8", "3.9", "3.10"]
+        python-version: ["3.11"] # ["3.8", "3.9", "3.10"]
 
     steps:
     # check out repo and set up python
@@ -49,13 +49,13 @@ jobs:
     # check typing
     - name: Mypy typing
       run: |
-        poetry run mypy -p gpx-etl
+        poetry run mypy -p gpx_etl
     # check formatting
     - name: Black formatting
       run: |
-        poetry run black --check gpx-etl
+        poetry run black --check gpx_etl
     # run test suite
     - name: Test with pytest
       run: |
         source .venv/bin/activate
-        poetry run pytest --cov-report term-missing --cov=gpx-etl tests/
+        poetry run pytest --cov-report term-missing --cov=gpx_etl tests/
