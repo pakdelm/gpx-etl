@@ -58,4 +58,4 @@ jobs:
     # source .venv/bin/activate
     - name: Test with pytest
       run: |
-        poetry run pytest --import-mode=append tests/
+        python -m pytest --import-mode=append tests/
