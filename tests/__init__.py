@@ -1,3 +1,3 @@
 import sys
 
-sys.path.append('./gpx_etl/tests')
+sys.path.append('./gpx-etl/tests')
