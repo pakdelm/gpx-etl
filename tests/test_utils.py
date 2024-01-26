@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List
 
-from gpxpy.gpx import GPX, GPXTrack, GPXTrackSegment, GPXTrackPoint
-
+from gpxpy.gpx import GPX, GPXTrack, GPXTrackPoint, GPXTrackSegment
 
 TRACK_NAME_DEFAULT = "test_track"
 START_TIME_DEFAULT = datetime(2023, 1, 1, 0, 0, 0)

@@ -4,6 +4,7 @@ Read gpx from file or xml.
 """
 
 from typing import AnyStr
+
 import gpxpy
 
 

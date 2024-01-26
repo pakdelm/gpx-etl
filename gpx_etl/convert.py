@@ -3,15 +3,13 @@
 This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
-from typing import List, Dict
 import logging
+from typing import Dict, List
 
-import numpy as np
-
-from utils import COLS, METADATA_SCHEMA
-
-import pandas as pd
 import gpxpy
+import numpy as np
+import pandas as pd
+from gpx_etl.utils import COLS, METADATA_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +143,7 @@ class GPXTransformer:
         df_lead = self.__lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.delta_t] = df_lead[lead_ts] - df_lead[COLS.timestamp]
-        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)
+        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)  # type: ignore
 
         return df_lead
 
