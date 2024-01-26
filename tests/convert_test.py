@@ -12,7 +12,7 @@ from tests.test_utils import generate_gpx_data
 pd.set_option("display.max_columns", None)
 logger = logging.getLogger(__name__)
 
-TEST_FILES_DIR = "test_files"
+TEST_FILES_DIR = "tests/test_files"
 
 
 @pytest.fixture(scope="function")
