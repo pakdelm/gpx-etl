@@ -9,7 +9,7 @@ from typing import Dict, List
 import gpxpy
 import numpy as np
 import pandas as pd
-from utils import COLS, METADATA_SCHEMA
+from gpx_etl.utils import COLS, METADATA_SCHEMA
 
 logger = logging.getLogger(__name__)
 
