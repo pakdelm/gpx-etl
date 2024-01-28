@@ -3,9 +3,9 @@ import logging
 import pandas as pd
 import pytest
 from gpxpy.gpx import GPXTrackPoint
+from pandas import DataFrame
 
-from gpx_etl.convert import GPXTransformer
-from gpx_etl.read import read_gpx_file
+from gpx_etl.transform import GPXTransformer
 from gpx_etl.utils import COLS
 from tests.test_utils import generate_gpx_data
 
@@ -23,10 +23,10 @@ def create_gpx_data_from_class(request):
 
 
 @pytest.fixture(scope="function")
-def create_gpx_data_from_file(request) -> pd.DataFrame:
+def create_gpx_data_from_file(request) -> DataFrame:
     gpx_file_name = request.param
-    gpx = read_gpx_file(f"{TEST_FILES_DIR}/{gpx_file_name}")
-    df_gpx = GPXTransformer(gpx).transform()
+    gpx_path = f"{TEST_FILES_DIR}/{gpx_file_name}"
+    df_gpx = GPXTransformer.from_file(gpx_path).transform()
     return df_gpx
 
 
@@ -88,3 +88,16 @@ def test_label_altitude(create_gpx_data_from_class):
     alt_loss = df_gpx[COLS.altitude_loss].sum()
     assert alt_gain == 10
     assert alt_loss == -50
+
+
+def test_from_file():
+    gpx_path = f"{TEST_FILES_DIR}/gpx_distances.gpx"
+    gpx_etl = GPXTransformer.from_file(gpx_path)
+    assert isinstance(gpx_etl, GPXTransformer)
+
+
+def test_from_xml():
+    gpx = generate_gpx_data(track_points=[GPXTrackPoint(latitude=1, longitude=1, elevation=1)])
+    xml = gpx.to_xml()
+    gpx_etl = GPXTransformer.from_xml(xml)
+    assert isinstance(gpx_etl, GPXTransformer)
