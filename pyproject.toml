@@ -17,9 +17,6 @@ gpxpy = "^1.5.0"
 pandas-stubs = "^1.5.2.230105"
 Mypy = "^0.991"
 ruff = "^0.1.14"
-black = "^23.1.0"
-isort = "^5.12.0"
-pydocstyle = "^6.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.1"
@@ -42,10 +39,3 @@ select = [
 
 [tool.mypy]
 ignore_missing_imports = true
-
-
-#[tool.black]
-#line-length = 100
-
-#[tool.isort]
-#profile = "black"

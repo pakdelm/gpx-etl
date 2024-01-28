@@ -46,20 +46,17 @@ jobs:
     - name: Ruff linter
       run: |
         poetry run ruff . --verbose
+    - name: Ruff pydocstyle & isort
+      run: |
+        poetry run ruff check . --verbose
+    - name: Ruff format
+      run: |
+        poetry run ruff format . --check --verbose
     # check typing
     - name: Mypy typing
       run: |
         poetry run mypy -p gpx_etl
-    # check formatting
-    - name: Black formatting
-      run: |
-        poetry run black --check gpx_etl
     # run test suite
-    # source .venv/bin/activate
-    # python -m pip install --upgrade pip
-    # python -m pip install pytest
-    # python -m pip install -e .
-    # python -m pytest --import-mode=append tests/
     - name: Test with pytest
       run: |
         poetry run python -m pytest tests/
