@@ -4,8 +4,7 @@ import pandas as pd
 import pytest
 from gpxpy.gpx import GPXTrackPoint
 
-from gpx_etl.convert import GPXTransformer
-from gpx_etl.read import read_gpx_file
+from gpx_etl.transform import GPXTransformer
 from gpx_etl.utils import COLS
 from tests.test_utils import generate_gpx_data
 
@@ -25,8 +24,8 @@ def create_gpx_data_from_class(request):
 @pytest.fixture(scope="function")
 def create_gpx_data_from_file(request) -> pd.DataFrame:
     gpx_file_name = request.param
-    gpx = read_gpx_file(f"{TEST_FILES_DIR}/{gpx_file_name}")
-    df_gpx = GPXTransformer(gpx).transform()
+    gpx_path = f"{TEST_FILES_DIR}/{gpx_file_name}"
+    df_gpx = GPXTransformer.from_file(gpx_path).transform()
     return df_gpx
 
 

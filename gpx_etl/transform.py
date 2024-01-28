@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from gpxpy.geo import haversine_distance
 from gpxpy.gpx import GPX
+from pandas import DataFrame
 
 from gpx_etl.utils import COLS, METADATA_SCHEMA
 
@@ -23,24 +24,24 @@ TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
 class GPXTransformer:
     """This class converts gpx data and returns metadata and track points."""
 
-    def __init__(self, gpx: GPX):
+    def __init__(self, gpx: GPX) -> None:
         """Instantiate class with gpx data."""
         self.gpx = gpx
 
     @classmethod
-    def from_file(cls, path: str) -> GPXTransformer:
+    def from_file(cls, path: str):
         """Return GPX data from file path. Must be .gpx file."""
         with open(path, "r", encoding="utf-8") as gpx_file:
             gpx = gpxpy.parse(gpx_file)
         return cls(gpx)
 
     @classmethod
-    def from_xml(cls, xml: AnyStr) -> GPXTransformer:
+    def from_xml(cls, xml: AnyStr):
         """Return GPX data from xml."""
         gpx = gpxpy.parse(xml)
         return cls(gpx)
 
-    def convert(self, with_metadata: bool = True) -> pd.DataFrame:
+    def convert(self, with_metadata: bool = True) -> DataFrame:
         """Convert gpx data to DataFrame format.
 
         :param with_metadata: If true, enrich time series DataFrame with
@@ -54,7 +55,7 @@ class GPXTransformer:
         else:
             return df_track_points
 
-    def transform(self, with_metadata: bool = True) -> pd.DataFrame:
+    def transform(self, with_metadata: bool = True) -> DataFrame:
         """Transform all"""
         df = (
             self.convert(with_metadata=with_metadata)
@@ -65,7 +66,7 @@ class GPXTransformer:
         )
         return df
 
-    def _get_metadata(self) -> pd.DataFrame:
+    def _get_metadata(self) -> DataFrame:
         """Return pandas DataFrame with metadata from gpx data."""
         metadata_values: List = [
             self.gpx.author_email,
@@ -91,11 +92,11 @@ class GPXTransformer:
             zip(METADATA_SCHEMA, [[v] for v in metadata_values])
         )
 
-        df_metadata = pd.DataFrame(metadata_map)
+        df_metadata = DataFrame(metadata_map)
 
         return df_metadata
 
-    def _get_track_points(self) -> pd.DataFrame:
+    def _get_track_points(self) -> DataFrame:
         """Return time series pandas DataFrame converted from gpx data.
 
         Rows will be labeled by track_name and segment_index that originates
@@ -113,7 +114,7 @@ class GPXTransformer:
                 for point in segment.points:
                     logger.debug(f"Track point: {point}")
 
-                    df_tmp = pd.DataFrame(
+                    df_tmp = DataFrame(
                         {
                             COLS.track_name: [track.name],
                             COLS.segment_index: [index],
@@ -133,7 +134,7 @@ class GPXTransformer:
 
         return df_concat
 
-    def _label_distance(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _label_distance(self, df: DataFrame) -> DataFrame:
         lead_long: str = f"lead_{COLS.longitude}"
         lead_lat: str = f"lead_{COLS.latitude}"
 
@@ -152,7 +153,7 @@ class GPXTransformer:
 
         return df_lead.drop(columns=[lead_long, lead_lat])
 
-    def _label_time_diff(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _label_time_diff(self, df: DataFrame) -> DataFrame:
         """Label time delta between timestamps."""
         lead_ts: str = f"lead_{COLS.timestamp}"
 
@@ -163,7 +164,7 @@ class GPXTransformer:
 
         return df_lead
 
-    def _label_alt_gain_loss(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _label_alt_gain_loss(self, df: DataFrame) -> DataFrame:
         """Label elevation difference and alt gain and loss.
 
         TODO: Test logic
@@ -186,7 +187,7 @@ class GPXTransformer:
         return df_lead
 
     @staticmethod
-    def _label_speed(df: pd.DataFrame) -> pd.DataFrame:
+    def _label_speed(df: DataFrame) -> DataFrame:
         """Label speed in km/h."""
         df[COLS.speed] = (df[COLS.distance] / df[COLS.delta_t]) * 3.6
 
@@ -202,8 +203,8 @@ class GPXTransformer:
 
     @staticmethod
     def __lead_by_partition(
-        df: pd.DataFrame, col: str, order_by: List[str], partitions: List[str]
-    ) -> pd.DataFrame:
+        df: DataFrame, col: str, order_by: List[str], partitions: List[str]
+    ) -> DataFrame:
         """Return DataFrame with shifted values by 1 by partitions and order.
 
         Create extra column "lead_" + input col name.
