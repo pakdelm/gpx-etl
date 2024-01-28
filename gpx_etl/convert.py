@@ -4,8 +4,9 @@ This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
 import logging
-from typing import Dict, List
+from typing import AnyStr, Dict, List
 
+import gpxpy
 import numpy as np
 import pandas as pd
 from gpxpy.geo import haversine_distance
@@ -25,6 +26,19 @@ class GPXTransformer:
     def __init__(self, gpx: GPX):
         """Instantiate class with gpx data."""
         self.gpx = gpx
+
+    @classmethod
+    def from_file(cls, path: str) -> GPXTransformer:
+        """Return GPX data from file path. Must be .gpx file."""
+        with open(path, "r", encoding="utf-8") as gpx_file:
+            gpx = gpxpy.parse(gpx_file)
+        return cls(gpx)
+
+    @classmethod
+    def from_xml(cls, xml: AnyStr) -> GPXTransformer:
+        """Return GPX data from xml."""
+        gpx = gpxpy.parse(xml)
+        return cls(gpx)
 
     def convert(self, with_metadata: bool = True) -> pd.DataFrame:
         """Convert gpx data to DataFrame format.
