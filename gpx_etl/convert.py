@@ -6,9 +6,11 @@ DataFrames.
 import logging
 from typing import Dict, List
 
-import gpxpy
 import numpy as np
 import pandas as pd
+from gpxpy.geo import haversine_distance
+from gpxpy.gpx import GPX
+
 from gpx_etl.utils import COLS, METADATA_SCHEMA
 
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ TRACK_PARTITIONS = [COLS.track_name, COLS.segment_index]
 class GPXTransformer:
     """This class converts gpx data and returns metadata and track points."""
 
-    def __init__(self, gpx: gpxpy.gpx.GPX):
+    def __init__(self, gpx: GPX):
         """Instantiate class with gpx data."""
         self.gpx = gpx
 
@@ -125,7 +127,7 @@ class GPXTransformer:
         df_lead = self.__lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.distance] = df_lead.apply(
-            lambda x: gpxpy.geo.haversine_distance(
+            lambda x: haversine_distance(
                 latitude_1=x[COLS.latitude],
                 longitude_1=x[COLS.longitude],
                 latitude_2=x[lead_lat],

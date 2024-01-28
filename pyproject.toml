@@ -1,15 +1,3 @@
-[tool.ruff]
-line-length = 100
-
-[tool.black]
-line-length = 100
-
-[tool.isort]
-profile = "black"
-
-[tool.mypy]
-ignore_missing_imports = true
-
 [tool.poetry]
 name = "gpx-etl"
 version = "0.1.0"
@@ -28,7 +16,7 @@ gpxpy = "^1.5.0"
 [tool.poetry.group.dev.dependencies]
 pandas-stubs = "^1.5.2.230105"
 Mypy = "^0.991"
-ruff = "^0.0.47"
+ruff = "^0.1.14"
 black = "^23.1.0"
 isort = "^5.12.0"
 pydocstyle = "^6.3.0"
@@ -40,3 +28,24 @@ pytest-cov = "^4.0.0"
 [build-system]
 requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # isort
+    "I",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+
+#[tool.black]
+#line-length = 100
+
+#[tool.isort]
+#profile = "black"
