@@ -1,4 +1,4 @@
-"""GPXDataFrameConverter converts GPX xml to tabular data to pandas DataFrames.
+"""GPXTransformer converts gpx data to tabular data format.
 
 This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
@@ -26,7 +26,11 @@ class GPXTransformer:
 
     def __init__(self, gpx: GPX) -> None:
         """Instantiate class with gpx data."""
-        self.gpx = gpx
+        self._gpx = gpx
+
+    @property
+    def gpx(self):
+        return self._gpx
 
     @classmethod
     def from_file(cls, path: str):
@@ -37,7 +41,7 @@ class GPXTransformer:
 
     @classmethod
     def from_xml(cls, xml: AnyStr):
-        """Return GPX data from xml."""
+        """Return GPXTransformer object from xml."""
         gpx = gpxpy.parse(xml)
         return cls(gpx)
 
