@@ -66,10 +66,34 @@ class GPXTransformer:
             .pipe(self._label_distance)
             .pipe(self._label_total_distance)
             .pipe(self._label_time_diff)
+            .pipe(self._label_time_metrics)
             .pipe(self._label_speed)
             .pipe(self._label_speed_metrics)
             .pipe(self._label_alt_gain_loss)
+            .pipe(self._label_altitude_metrics)
         )
+        return df
+
+    def stats(self) -> DataFrame:
+        """Return aggregated statistics of gpx data."""
+        df = self.transform(with_metadata=False)
+        df = df[
+            [
+                COLS.track_name,
+                COLS.segment_index,
+                COLS.min_timestamp,
+                COLS.max_timestamp,
+                COLS.duration,
+                COLS.total_distance,
+                COLS.min_speed,
+                COLS.max_speed,
+                COLS.mean_speed,
+                COLS.min_elevation,
+                COLS.max_elevation,
+                COLS.total_altitude_gain,
+                COLS.total_altitude_loss,
+            ]
+        ].drop_duplicates()
         return df
 
     def _get_metadata(self) -> DataFrame:
@@ -219,9 +243,45 @@ class GPXTransformer:
         agg_funcs = ["min", "max", "mean"]
 
         for func in agg_funcs:
+            df = self._aggregate_by_partition(df, COLS.speed, ORDER_BY_COL, TRACK_PARTITIONS, func)
+
+        return df
+
+    def _label_altitude_metrics(self, df: DataFrame) -> DataFrame:
+        """Label min, max elevation and total altitude gain/loss in meters."""
+        agg_funcs = ["min", "max"]
+        agg_cols = [COLS.altitude_gain, COLS.altitude_loss]
+
+        for func in agg_funcs:
             df = self._aggregate_by_partition(
-                df, COLS.speed, ORDER_BY_COL, TRACK_PARTITIONS, func
+                df, COLS.elevation, ORDER_BY_COL, TRACK_PARTITIONS, func
             )
+
+        for col in agg_cols:
+            df = self._aggregate_by_partition(df, col, ORDER_BY_COL, TRACK_PARTITIONS, "sum")
+
+        df_agg = df.rename(
+            columns={
+                f"sum_{COLS.altitude_gain}": f"total_{COLS.altitude_gain}",
+                f"sum_{COLS.altitude_loss}": f"total_{COLS.altitude_loss}",
+            }
+        )
+
+        return df_agg
+
+    def _label_time_metrics(self, df: DataFrame) -> DataFrame:
+        """Label min, max timestamps and duration in minutes."""
+        agg_funcs = ["min", "max"]
+        delta_t_col_name = f"sum_{COLS.delta_t}"
+
+        for func in agg_funcs:
+            df = self._aggregate_by_partition(
+                df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS, func
+            )
+
+        df[COLS.duration] = (df[COLS.max_timestamp] - df[COLS.min_timestamp]) / pd.Timedelta(
+            minutes=1
+        )
 
         return df
 

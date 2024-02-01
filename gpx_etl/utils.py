@@ -33,11 +33,22 @@ class Columns:
     version: str
     schema_locations: str
     distance: str
+    total_distance: str
     delta_t: str
     speed: str
+    min_speed: str
+    max_speed: str
+    mean_speed: str
     delta_elevation: str
     altitude_gain: str
     altitude_loss: str
+    min_elevation: str
+    max_elevation: str
+    total_altitude_gain: str
+    total_altitude_loss: str
+    min_timestamp: str
+    max_timestamp: str
+    duration: str
 
 
 COLS = Columns(
@@ -65,11 +76,22 @@ COLS = Columns(
     "version",
     "schema_locations",
     "distance",
+    "total_distance",
     "delta_t",
     "speed",
+    "min_speed",
+    "max_speed",
+    "mean_speed",
     "delta_elevation",
     "altitude_gain",
     "altitude_loss",
+    "min_elevation",
+    "max_elevation",
+    "total_altitude_gain",
+    "total_altitude_loss",
+    "min_timestamp",
+    "max_timestamp",
+    "duration",
 )
 
 METADATA_SCHEMA = [
