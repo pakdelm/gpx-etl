@@ -5,7 +5,7 @@ DataFrames.
 """
 import logging
 from typing import AnyStr, Dict, List
-
+from functools import cached_property
 import gpxpy
 import numpy as np
 import pandas as pd
@@ -31,6 +31,10 @@ class GPXTransformer:
     @property
     def gpx(self):
         return self._gpx
+
+    @cached_property
+    def to_dataframe(self):
+        return self.transform()
 
     @classmethod
     def from_file(cls, path: str):
@@ -74,10 +78,10 @@ class GPXTransformer:
         )
         return df
 
+    @property
     def stats(self) -> DataFrame:
         """Return aggregated statistics of gpx data."""
-        df = self.transform(with_metadata=False)
-        df = df[
+        df = self.to_dataframe[
             [
                 COLS.track_name,
                 COLS.segment_index,
@@ -94,6 +98,7 @@ class GPXTransformer:
                 COLS.total_altitude_loss,
             ]
         ].drop_duplicates()
+
         return df
 
     def _get_metadata(self) -> DataFrame:
@@ -287,7 +292,7 @@ class GPXTransformer:
 
     @staticmethod
     def _lead_by_partition(
-        df: DataFrame, col: str, order_by: List[str], partitions: List[str]
+            df: DataFrame, col: str, order_by: List[str], partitions: List[str]
     ) -> DataFrame:
         """Return DataFrame with shifted values by 1 by partitions and order.
 
@@ -303,7 +308,7 @@ class GPXTransformer:
 
     @staticmethod
     def _aggregate_by_partition(
-        df: DataFrame, col: str, order_by: List[str], partitions: List[str], func: str
+            df: DataFrame, col: str, order_by: List[str], partitions: List[str], func: str
     ) -> DataFrame:
         """Return DataFrame with aggregated values over partitions."""
         agg_col: str = f"{func}_{col}"
