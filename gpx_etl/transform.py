@@ -4,8 +4,9 @@ This module converts gpx data and returns metadata and track points as pandas
 DataFrames.
 """
 import logging
-from typing import AnyStr, Dict, List
 from functools import cached_property
+from typing import AnyStr, Dict, List
+
 import gpxpy
 import numpy as np
 import pandas as pd
