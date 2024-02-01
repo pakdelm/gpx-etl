@@ -34,7 +34,7 @@ class GPXTransformer:
 
     @classmethod
     def from_file(cls, path: str):
-        """Return GPX data from file path. Must be .gpx file."""
+        """Return GPXTransformer object from .gpx file path."""
         with open(path, "r", encoding="utf-8") as gpx_file:
             gpx = gpxpy.parse(gpx_file)
         return cls(gpx)
@@ -215,7 +215,7 @@ class GPXTransformer:
         return df_agg
 
     def _label_speed_metrics(self, df: DataFrame) -> DataFrame:
-        """Label average speed km per hour partitioned by track name and segments index."""
+        """Label min, max, mean speed km per hour partitioned by track name and segments index."""
         agg_funcs = ["min", "max", "mean"]
 
         for func in agg_funcs:
