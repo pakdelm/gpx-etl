@@ -293,7 +293,7 @@ class GPXTransformer:
 
     @staticmethod
     def _lead_by_partition(
-            df: DataFrame, col: str, order_by: List[str], partitions: List[str]
+        df: DataFrame, col: str, order_by: List[str], partitions: List[str]
     ) -> DataFrame:
         """Return DataFrame with shifted values by 1 by partitions and order.
 
@@ -309,7 +309,7 @@ class GPXTransformer:
 
     @staticmethod
     def _aggregate_by_partition(
-            df: DataFrame, col: str, order_by: List[str], partitions: List[str], func: str
+        df: DataFrame, col: str, order_by: List[str], partitions: List[str], func: str
     ) -> DataFrame:
         """Return DataFrame with aggregated values over partitions."""
         agg_col: str = f"{func}_{col}"
