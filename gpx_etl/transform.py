@@ -60,12 +60,14 @@ class GPXTransformer:
             return df_track_points
 
     def transform(self, with_metadata: bool = True) -> DataFrame:
-        """Transform all"""
+        """Transform gpx data to DataFrame format and label metrics."""
         df = (
             self.convert(with_metadata=with_metadata)
             .pipe(self._label_distance)
+            .pipe(self._label_total_distance)
             .pipe(self._label_time_diff)
             .pipe(self._label_speed)
+            .pipe(self._label_speed_metrics)
             .pipe(self._label_alt_gain_loss)
         )
         return df
@@ -142,8 +144,8 @@ class GPXTransformer:
         lead_long: str = f"lead_{COLS.longitude}"
         lead_lat: str = f"lead_{COLS.latitude}"
 
-        df_lead = self.__lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
-        df_lead = self.__lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self._lead_by_partition(df, COLS.longitude, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self._lead_by_partition(df_lead, COLS.latitude, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.distance] = df_lead.apply(
             lambda x: haversine_distance(
@@ -155,29 +157,32 @@ class GPXTransformer:
             axis=1,
         )
 
-        return df_lead.drop(columns=[lead_long, lead_lat])
+        df_distance = df_lead.drop(columns=[lead_long, lead_lat])
+
+        return df_distance
 
     def _label_time_diff(self, df: DataFrame) -> DataFrame:
         """Label time delta between timestamps."""
         lead_ts: str = f"lead_{COLS.timestamp}"
 
-        df_lead = self.__lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self._lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.delta_t] = df_lead[lead_ts] - df_lead[COLS.timestamp]
         df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)  # type: ignore
 
-        return df_lead
+        df_time_diff = df_lead.drop(columns=[lead_ts])
+
+        return df_time_diff
 
     def _label_alt_gain_loss(self, df: DataFrame) -> DataFrame:
         """Label elevation difference and alt gain and loss.
 
-        TODO: Test logic
         Calculate altitude gain and loss. Sum to get total gain and loss in meters. Note: alt_dif
         col might be misleading as negative differences for n-1 indicate alt gain and vice verca.
         """
         lead_elevation: str = f"lead_{COLS.elevation}"
 
-        df_lead = self.__lead_by_partition(df, COLS.elevation, ORDER_BY_COL, TRACK_PARTITIONS)
+        df_lead = self._lead_by_partition(df, COLS.elevation, ORDER_BY_COL, TRACK_PARTITIONS)
 
         df_lead[COLS.delta_elevation] = df_lead[lead_elevation] - df_lead[COLS.elevation]
 
@@ -188,25 +193,40 @@ class GPXTransformer:
             df_lead[COLS.delta_elevation] < 0, df_lead[COLS.delta_elevation], 0
         )
 
-        return df_lead
+        df_alt = df_lead.drop(columns=[lead_elevation])
+
+        return df_alt
 
     @staticmethod
     def _label_speed(df: DataFrame) -> DataFrame:
-        """Label speed in km/h."""
+        """Label speed in km per hour."""
         df[COLS.speed] = (df[COLS.distance] / df[COLS.delta_t]) * 3.6
 
         return df
 
-    def _label_total_distance(self):
-        """TODO: How to partition over segments"""
-        pass
+    def _label_total_distance(self, df: DataFrame) -> DataFrame:
+        """Label total distance in meters (m) partitioned by track name and segments index."""
+        agg_func = "sum"
+        df_agg = self._aggregate_by_partition(
+            df, COLS.distance, ORDER_BY_COL, TRACK_PARTITIONS, agg_func
+        )
+        df_agg = df_agg.rename(columns={f"{agg_func}_{COLS.distance}": f"total_{COLS.distance}"})
 
-    def _label_average_speed(self):
-        """TODO: How to partition over segments"""
-        pass
+        return df_agg
+
+    def _label_speed_metrics(self, df: DataFrame) -> DataFrame:
+        """Label average speed km per hour partitioned by track name and segments index."""
+        agg_funcs = ["min", "max", "mean"]
+
+        for func in agg_funcs:
+            df = self._aggregate_by_partition(
+                df, COLS.speed, ORDER_BY_COL, TRACK_PARTITIONS, func
+            )
+
+        return df
 
     @staticmethod
-    def __lead_by_partition(
+    def _lead_by_partition(
         df: DataFrame, col: str, order_by: List[str], partitions: List[str]
     ) -> DataFrame:
         """Return DataFrame with shifted values by 1 by partitions and order.
@@ -217,6 +237,19 @@ class GPXTransformer:
 
         df[lead_col] = (
             df.sort_values(by=order_by, ascending=True).groupby(partitions)[col].shift(-1)
+        )
+
+        return df
+
+    @staticmethod
+    def _aggregate_by_partition(
+        df: DataFrame, col: str, order_by: List[str], partitions: List[str], func: str
+    ) -> DataFrame:
+        """Return DataFrame with aggregated values over partitions."""
+        agg_col: str = f"{func}_{col}"
+
+        df[agg_col] = (
+            df.sort_values(by=order_by, ascending=True).groupby(partitions)[col].transform(func)
         )
 
         return df
