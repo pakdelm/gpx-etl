@@ -285,9 +285,12 @@ class GPXTransformer:
                 df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS, func
             )
 
-        df[COLS.duration] = (df[COLS.max_timestamp] - df[COLS.min_timestamp]) / pd.Timedelta(
-            minutes=1
+        # fmt: off
+        df[COLS.duration] = (
+            (df[COLS.max_timestamp] - df[COLS.min_timestamp])
+            / pd.Timedelta(minutes=1)  # type: ignore
         )
+        # fmt: on
 
         return df
 
