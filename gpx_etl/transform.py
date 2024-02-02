@@ -30,11 +30,12 @@ class GPXTransformer:
         self._gpx = gpx
 
     @property
-    def gpx(self):
+    def gpx(self) -> GPX:
         return self._gpx
 
     @cached_property
-    def to_dataframe(self):
+    def to_dataframe(self) -> DataFrame:
+        """Return gpx data to time series DataFrame format with labeled metrics and metadata."""
         return self.transform()
 
     @classmethod

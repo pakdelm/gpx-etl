@@ -59,6 +59,4 @@ jobs:
     # run test suite
     - name: Test with pytest
       run: |
-        poetry run pytest tests/
-    # pytest --cov-report term-missing --cov=gpx_etl --cov-fail-under=90 tests
- 
+        poetry run pytest --cov-report term-missing --cov=gpx_etl --cov-fail-under=95 tests
