@@ -5,9 +5,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["dev", "main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["dev", "main"]
 
 jobs:
   build:
@@ -59,5 +59,6 @@ jobs:
     # run test suite
     - name: Test with pytest
       run: |
-        poetry run python -m pytest tests/
+        poetry run pytest tests/
+    # pytest --cov-report term-missing --cov=gpx_etl --cov-fail-under=90 tests
  
