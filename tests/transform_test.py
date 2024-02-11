@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 from gpxpy.gpx import GPXTrackPoint
 from pandas import DataFrame
+from pandas.testing import assert_frame_equal
 
 from gpx_etl.transform import GPXTransformer
 from gpx_etl.utils import COLS
@@ -101,3 +102,27 @@ def test_from_xml():
     xml = gpx.to_xml()
     gpx_etl = GPXTransformer.from_xml(xml)
     assert isinstance(gpx_etl, GPXTransformer)
+
+
+def test_missing_time():
+    gpx = generate_gpx_data(
+        track_points=[
+            GPXTrackPoint(latitude=48.59, longitude=-3.83, elevation=11.71),
+            GPXTrackPoint(latitude=48.60, longitude=-3.89, elevation=11.80),
+            GPXTrackPoint(latitude=48.65, longitude=-3.95, elevation=11.85),
+        ],
+        start_time=None,
+    )
+    df_gpx = GPXTransformer(gpx).to_dataframe
+    time_dependent_cols = [
+        COLS.timestamp,
+        COLS.delta_t,
+        COLS.duration,
+        COLS.speed,
+        COLS.min_speed,
+        COLS.max_speed,
+        COLS.mean_speed,
+    ]
+    df_actual = df_gpx[time_dependent_cols].drop_duplicates()
+    df_expected = pd.DataFrame({col: [None] for col in time_dependent_cols})
+    assert_frame_equal(df_actual, df_expected)
