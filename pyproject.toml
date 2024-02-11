@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gpx-etl"
-version = "0.1.0"
+version = "0.0.1"
 description = "Parse, transform, process and create statistics from gpx files."
 authors = ["pakdelm <mehrshad.pakdel@posteo.de>"]
 license = "Apache License 2.0"
@@ -9,18 +9,19 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
-pandas = "^1.5.2"
-gpxpy = "^1.5.0"
+python = ">=3.9"
+pandas = "^2.2.0"
+pyarrow = "^15.0.0"
+gpxpy = "^1.6.2"
 
 [tool.poetry.group.dev.dependencies]
-pandas-stubs = "^1.5.2.230105"
-Mypy = "^0.991"
-ruff = "^0.1.14"
+pandas-stubs = "^2.1.4.231227"
+Mypy = "^1.8.0"
+ruff = "^0.2.1"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.2.1"
-pytest-cov = "^4.0.0"
+pytest = "^8.0.0"
+pytest-cov = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.2.0"]
@@ -31,10 +32,8 @@ line-length = 100
 
 [tool.ruff.lint]
 select = [
-    # pycodestyle
-    "E",
-    # isort
-    "I",
+    "E", # pycodestyle
+    "I", # isort
 ]
 
 [tool.mypy]
