@@ -157,22 +157,27 @@ class GPXTransformer:
                 logger.debug(f"Segment index: {index}")
                 logger.debug(f"Segment: {segment}")
 
-                for point in segment.points:
-                    logger.debug(f"Track point: {point}")
+                track_names = [track.name] * len(segment.points)
+                segment_indices = [index] * len(segment.points)
+                longitudes = [point.longitude for point in segment.points]
+                latitudes = [point.latitude for point in segment.points]
+                elevations = [point.elevation for point in segment.points]
+                timestamps = [
+                    point.time.replace(tzinfo=None)  # type: ignore
+                    for point in segment.points
+                ]
 
-                    df_tmp = DataFrame(
-                        {
-                            COLS.track_name: [track.name],
-                            COLS.segment_index: [index],
-                            COLS.longitude: [point.longitude],
-                            COLS.latitude: [point.latitude],
-                            COLS.elevation: [point.elevation],
-                            COLS.timestamp: [
-                                point.time.replace(tzinfo=None, microsecond=0)  # type: ignore
-                            ],
-                        }
-                    )
-                    tmp.append(df_tmp)
+                df_tmp = DataFrame(
+                    {
+                        COLS.track_name: track_names,
+                        COLS.segment_index: segment_indices,
+                        COLS.longitude: longitudes,
+                        COLS.latitude: latitudes,
+                        COLS.elevation: elevations,
+                        COLS.timestamp: timestamps,
+                    }
+                )
+                tmp.append(df_tmp)
 
         df_concat = pd.concat(tmp).reset_index(drop=True)
         logger.info("Finished converting gpx data to DataFrame.")
