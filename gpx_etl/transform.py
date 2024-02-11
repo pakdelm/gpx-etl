@@ -157,22 +157,27 @@ class GPXTransformer:
                 logger.debug(f"Segment index: {index}")
                 logger.debug(f"Segment: {segment}")
 
-                for point in segment.points:
-                    logger.debug(f"Track point: {point}")
+                track_names = [track.name] * len(segment.points)
+                segment_indices = [index] * len(segment.points)
+                longitudes = [point.longitude for point in segment.points]
+                latitudes = [point.latitude for point in segment.points]
+                elevations = [point.elevation for point in segment.points]
+                timestamps = [
+                    point.time.replace(tzinfo=None) if point.time is not None else point.time  # type: ignore
+                    for point in segment.points
+                ]
 
-                    df_tmp = DataFrame(
-                        {
-                            COLS.track_name: [track.name],
-                            COLS.segment_index: [index],
-                            COLS.longitude: [point.longitude],
-                            COLS.latitude: [point.latitude],
-                            COLS.elevation: [point.elevation],
-                            COLS.timestamp: [
-                                point.time.replace(tzinfo=None, microsecond=0)  # type: ignore
-                            ],
-                        }
-                    )
-                    tmp.append(df_tmp)
+                df_tmp = DataFrame(
+                    {
+                        COLS.track_name: track_names,
+                        COLS.segment_index: segment_indices,
+                        COLS.longitude: longitudes,
+                        COLS.latitude: latitudes,
+                        COLS.elevation: elevations,
+                        COLS.timestamp: timestamps,
+                    }
+                )
+                tmp.append(df_tmp)
 
         df_concat = pd.concat(tmp).reset_index(drop=True)
         logger.info("Finished converting gpx data to DataFrame.")
@@ -204,14 +209,15 @@ class GPXTransformer:
         """Label time delta between timestamps."""
         lead_ts: str = f"lead_{COLS.timestamp}"
 
-        df_lead = self._lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
+        if self.gpx.has_times():
+            df = self._lead_by_partition(df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS)
+            df[COLS.delta_t] = df[lead_ts] - df[COLS.timestamp]
+            df[COLS.delta_t] = df[COLS.delta_t] / pd.Timedelta(seconds=1)  # type: ignore
+            df = df.drop(columns=[lead_ts])
+        else:
+            df[COLS.delta_t] = None
 
-        df_lead[COLS.delta_t] = df_lead[lead_ts] - df_lead[COLS.timestamp]
-        df_lead[COLS.delta_t] = df_lead[COLS.delta_t] / pd.Timedelta(seconds=1)  # type: ignore
-
-        df_time_diff = df_lead.drop(columns=[lead_ts])
-
-        return df_time_diff
+        return df
 
     def _label_alt_gain_loss(self, df: DataFrame) -> DataFrame:
         """Label elevation difference and alt gain and loss.
@@ -236,10 +242,12 @@ class GPXTransformer:
 
         return df_alt
 
-    @staticmethod
-    def _label_speed(df: DataFrame) -> DataFrame:
+    def _label_speed(self, df: DataFrame) -> DataFrame:
         """Label speed in km per hour."""
-        df[COLS.speed] = (df[COLS.distance] / df[COLS.delta_t]) * 3.6
+        if self.gpx.has_times():
+            df[COLS.speed] = (df[COLS.distance] / df[COLS.delta_t]) * 3.6
+        else:
+            df[COLS.speed] = None
 
         return df
 
@@ -256,10 +264,14 @@ class GPXTransformer:
     def _label_speed_metrics(self, df: DataFrame) -> DataFrame:
         """Label min, max, mean speed km per hour partitioned by track name and segments index."""
         agg_funcs = ["min", "max", "mean"]
-
-        for func in agg_funcs:
-            df = self._aggregate_by_partition(df, COLS.speed, ORDER_BY_COL, TRACK_PARTITIONS, func)
-
+        if self.gpx.has_times():
+            for func in agg_funcs:
+                df = self._aggregate_by_partition(
+                    df, COLS.speed, ORDER_BY_COL, TRACK_PARTITIONS, func
+                )
+        else:
+            data = {col: None for col in [f"{func}_{COLS.speed}" for func in agg_funcs]}
+            df = df.assign(**data)
         return df
 
     def _label_altitude_metrics(self, df: DataFrame) -> DataFrame:
@@ -286,20 +298,22 @@ class GPXTransformer:
 
     def _label_time_metrics(self, df: DataFrame) -> DataFrame:
         """Label min, max timestamps and duration in minutes."""
-        agg_funcs = ["min", "max"]
-        delta_t_col_name = f"sum_{COLS.delta_t}"
+        if self.gpx.has_times():
+            agg_funcs = ["min", "max"]
 
-        for func in agg_funcs:
-            df = self._aggregate_by_partition(
-                df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS, func
+            for func in agg_funcs:
+                df = self._aggregate_by_partition(
+                    df, COLS.timestamp, ORDER_BY_COL, TRACK_PARTITIONS, func
+                )
+
+            # fmt: off
+            df[COLS.duration] = (
+                    (df[COLS.max_timestamp] - df[COLS.min_timestamp])
+                    / pd.Timedelta(minutes=1)  # type: ignore
             )
-
-        # fmt: off
-        df[COLS.duration] = (
-				(df[COLS.max_timestamp] - df[COLS.min_timestamp])
-				/ pd.Timedelta(minutes=1)  # type: ignore
-		)
-        # fmt: on
+            # fmt: on
+        else:
+            df[COLS.duration] = None
 
         return df
 
