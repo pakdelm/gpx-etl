@@ -6,6 +6,9 @@ Keep track of latest changes to gpx-etl ✨
 
 ## Releases
 
+### 0.0.2 - 2024-02-11
+- Update pyproject.toml for PyPI release
+
 ### 0.0.1 - 2024-02-11
 - Set up poetry project
 - Implement gpx to dataframe conversion logic
