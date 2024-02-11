@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gpx-etl"
-version = "0.0.1"
+version = "0.0.2"
 description = "Parse, transform, process and create statistics from gpx files."
 readme = "README.md"
 authors = ["pakdelm <mehrshad.pakdel@posteo.de>"]
