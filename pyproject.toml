@@ -2,11 +2,24 @@
 name = "gpx-etl"
 version = "0.0.1"
 description = "Parse, transform, process and create statistics from gpx files."
+readme = "README.md"
 authors = ["pakdelm <mehrshad.pakdel@posteo.de>"]
 license = "Apache License 2.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Development Status :: 2 - Pre-Alpha"
+]
+
+[project.urls]
+Homepage = "https://github.com/pakdelm/gpx-etl"
+Issues = "https://github.com/pakdelm/gpx-etl/issues"
+
 packages = [
     { include = "gpx_etl/*.py" }
 ]
+requires-python = ">=3.9"
 
 [tool.poetry.dependencies]
 python = ">=3.9"
