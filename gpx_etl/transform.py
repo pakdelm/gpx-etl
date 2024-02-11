@@ -26,62 +26,35 @@ class GPXTransformer:
     """This class converts gpx data and returns metadata and track points."""
 
     def __init__(self, gpx: GPX) -> None:
-        """Instantiate class with gpx data."""
+        """Instantiate object with gpx data."""
         self._gpx = gpx
 
     @property
-    def gpx(self):
+    def gpx(self) -> GPX:
+        """Get the gpx data of the object."""
         return self._gpx
 
     @cached_property
-    def to_dataframe(self):
-        return self.transform()
+    def to_dataframe(self) -> DataFrame:
+        """Get transformed gpx data with labeled metrics and metadata as time series DataFrame.
 
-    @classmethod
-    def from_file(cls, path: str):
-        """Return GPXTransformer object from .gpx file path."""
-        with open(path, "r", encoding="utf-8") as gpx_file:
-            gpx = gpxpy.parse(gpx_file)
-        return cls(gpx)
-
-    @classmethod
-    def from_xml(cls, xml: AnyStr):
-        """Return GPXTransformer object from xml."""
-        gpx = gpxpy.parse(xml)
-        return cls(gpx)
-
-    def convert(self, with_metadata: bool = True) -> DataFrame:
-        """Convert gpx data to DataFrame format.
-
-        :param with_metadata: If true, enrich time series DataFrame with
-        metadata columns from the gpx xml. If false, return time series
-        DataFrame only.
-        :return: Return converted DataFrame with time series gpx data.
+        Aggregated statistics are partitioned by track name and segments.
         """
-        df_track_points = self._get_track_points()
-        if with_metadata:
-            return df_track_points.merge(self._get_metadata(), how="cross")
-        else:
-            return df_track_points
-
-    def transform(self, with_metadata: bool = True) -> DataFrame:
-        """Transform gpx data to DataFrame format and label metrics."""
-        df = (
-            self.convert(with_metadata=with_metadata)
-            .pipe(self._label_distance)
-            .pipe(self._label_total_distance)
-            .pipe(self._label_time_diff)
-            .pipe(self._label_time_metrics)
-            .pipe(self._label_speed)
-            .pipe(self._label_speed_metrics)
-            .pipe(self._label_alt_gain_loss)
-            .pipe(self._label_altitude_metrics)
-        )
-        return df
+        return self.transform()
 
     @property
     def stats(self) -> DataFrame:
-        """Return aggregated statistics of gpx data."""
+        """Get aggregated statistics of gpx data as DataFrame.
+
+        Statistics are partitioned by track name and segments. These include:
+
+            - min and max timestamps [ISO 8601 format]
+            - duration [min]
+            - total distance [m]
+            - min, max and mean speed [km/h]
+            - min, max elevation [m]
+            - total altitude gain and loss [m]
+        """
         df = self.to_dataframe[
             [
                 COLS.track_name,
@@ -102,8 +75,9 @@ class GPXTransformer:
 
         return df
 
-    def _get_metadata(self) -> DataFrame:
-        """Return pandas DataFrame with metadata from gpx data."""
+    @property
+    def metadata(self) -> DataFrame:
+        """Get metadata of gpx data as DataFrame."""
         metadata_values: List = [
             self.gpx.author_email,
             self.gpx.author_link,
@@ -127,10 +101,46 @@ class GPXTransformer:
         metadata_map: Dict[str, List[str]] = dict(
             zip(METADATA_SCHEMA, [[v] for v in metadata_values])
         )
-
         df_metadata = DataFrame(metadata_map)
 
         return df_metadata
+
+    @classmethod
+    def from_file(cls, path: str):
+        """Return GPXTransformer object from .gpx file path."""
+        with open(path, "r", encoding="utf-8") as gpx_file:
+            gpx = gpxpy.parse(gpx_file)
+        return cls(gpx)
+
+    @classmethod
+    def from_xml(cls, xml: AnyStr):
+        """Return GPXTransformer object from xml."""
+        gpx = gpxpy.parse(xml)
+        return cls(gpx)
+
+    def transform(self, with_metadata: bool = True) -> DataFrame:
+        """Transform gpx data to DataFrame format and label metrics.
+
+        :param with_metadata: If true, enrich time series DataFrame with
+        metadata columns from the gpx xml. If false, return time series
+        DataFrame only.
+        :return: Return converted DataFrame with time series gpx data.
+        """
+        df = (
+            self._get_track_points()
+            .pipe(self._label_distance)
+            .pipe(self._label_total_distance)
+            .pipe(self._label_time_diff)
+            .pipe(self._label_time_metrics)
+            .pipe(self._label_speed)
+            .pipe(self._label_speed_metrics)
+            .pipe(self._label_alt_gain_loss)
+            .pipe(self._label_altitude_metrics)
+        )
+        if with_metadata:
+            return df.merge(self.metadata, how="cross")
+        else:
+            return df
 
     def _get_track_points(self) -> DataFrame:
         """Return time series pandas DataFrame converted from gpx data.
@@ -141,10 +151,10 @@ class GPXTransformer:
         """
         tmp = []
         for track in self.gpx.tracks:
-            logger.info(f"Track name: {track.name}")
+            logger.info(f"Start converting gpx data for track name: {track.name}")
 
             for index, segment in enumerate(track.segments):
-                logger.info(f"Segment index: {index}")
+                logger.debug(f"Segment index: {index}")
                 logger.debug(f"Segment: {segment}")
 
                 for point in segment.points:
@@ -165,8 +175,7 @@ class GPXTransformer:
                     tmp.append(df_tmp)
 
         df_concat = pd.concat(tmp).reset_index(drop=True)
-
-        logger.debug(f"GPX file converted to DataFrame: {df_concat.head()}")
+        logger.info("Finished converting gpx data to DataFrame.")
 
         return df_concat
 
@@ -287,9 +296,9 @@ class GPXTransformer:
 
         # fmt: off
         df[COLS.duration] = (
-            (df[COLS.max_timestamp] - df[COLS.min_timestamp])
-            / pd.Timedelta(minutes=1)  # type: ignore
-        )
+				(df[COLS.max_timestamp] - df[COLS.min_timestamp])
+				/ pd.Timedelta(minutes=1)  # type: ignore
+		)
         # fmt: on
 
         return df
