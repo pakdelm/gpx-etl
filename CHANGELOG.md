@@ -3,6 +3,7 @@
 Keep track of latest changes to gpx-etl ✨
 
 ## tbd
+- Improve transformation performance by avoiding DataFrame creation in every iteration [#26](https://github.com/pakdelm/gpx-etl/issues/26)
 
 ## Releases
 
