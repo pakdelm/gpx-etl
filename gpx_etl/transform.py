@@ -162,8 +162,7 @@ class GPXTransformer:
                 longitudes = [point.longitude for point in segment.points]
                 latitudes = [point.latitude for point in segment.points]
                 elevations = [point.elevation for point in segment.points]
-                timestamps = [point.time.replace(tzinfo=None) for point in
-                              segment.points]
+                timestamps = [point.time.replace(tzinfo=None) for point in segment.points]
 
                 df_tmp = DataFrame(
                     {
